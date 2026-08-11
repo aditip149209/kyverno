@@ -127,7 +127,7 @@ func (c *compilerImpl) Compile(ivpolicy policiesv1beta1.ImageValidatingPolicyLik
 		path := path.Child("validations")
 		for i, rule := range spec.Validations {
 			path := path.Index(i)
-			program, errs := engine.CompileValidation(path, env, rule)
+			program, errs := engine.CompileValidation(path, env, rule, false)
 			if errs != nil {
 				return nil, append(allErrs, errs...)
 			}

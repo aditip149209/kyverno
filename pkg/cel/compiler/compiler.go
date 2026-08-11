@@ -133,7 +133,13 @@ func CompileAuditAnnotations(path *field.Path, env *cel.Env, auditAnnotations ..
 	return result, allErrs
 }
 
-func CompileValidation(path *field.Path, env *cel.Env, rule admissionregistrationv1.Validation) (Validation, field.ErrorList) {
+// CompileValidation compiles a validation rule's expression and, if present, its
+// messageExpression. When trace is true, the expression's AST is retained on the returned
+// Validation and its Program is built with cel.OptTrackState, so a later ContextEval call
+// returns a non-nil *cel.EvalDetails that trace.Build can turn into a per-expression trace.
+// The webhook admission path must always call this with trace=false: tracing cannot be
+// toggled per evaluation, only at compile time, since OptTrackState is a ProgramOption.
+func CompileValidation(path *field.Path, env *cel.Env, rule admissionregistrationv1.Validation, trace bool) (Validation, field.ErrorList) {
 	var allErrs field.ErrorList
 	compiled := Validation{Message: rule.Message}
 	{
@@ -146,11 +152,18 @@ func CompileValidation(path *field.Path, env *cel.Env, rule admissionregistratio
 			msg := fmt.Sprintf("output is expected to be of type %s", types.BoolType.TypeName())
 			return Validation{}, append(allErrs, field.Invalid(path, rule.Expression, msg))
 		}
-		program, err := env.Program(ast)
+		var opts []cel.ProgramOption
+		if trace {
+			opts = append(opts, cel.EvalOptions(cel.OptTrackState))
+		}
+		program, err := env.Program(ast, opts...)
 		if err != nil {
 			return Validation{}, append(allErrs, field.Invalid(path, rule.Expression, err.Error()))
 		}
 		compiled.Program = program
+		if trace {
+			compiled.AST = ast
+		}
 	}
 	if rule.MessageExpression != "" {
 		path := path.Child("messageExpression")
