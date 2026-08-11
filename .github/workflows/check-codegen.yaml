@@ -22,6 +22,8 @@ jobs:
   verify-codegen-code:
     name: Verify codegen (code)
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -42,10 +44,32 @@ jobs:
         with:
           name: codegen-code-patch
           path: codegen-code.patch
+      - name: Comment codegen patch on PR
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          {
+            echo 'Codegen check failed. Apply this fix:'
+            echo
+            echo '```diff'
+            head -c 60000 codegen-code.patch
+            echo '```'
+            echo
+            echo 'Or run locally: `make codegen-all-code && make verify-codegen`'
+            if [ "$(wc -c < codegen-code.patch)" -gt 60000 ]; then
+              echo
+              echo '_Patch truncated -- download the `codegen-code-patch` artifact from this run for the full diff._'
+            fi
+          } > pr-comment-body.md
+          gh pr comment "$PR_NUMBER" --body-file pr-comment-body.md
 
   verify-codegen-docs:
     name: Verify codegen (docs)
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -66,6 +90,26 @@ jobs:
         with:
           name: codegen-docs-patch
           path: codegen-docs.patch
+      - name: Comment codegen patch on PR
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          {
+            echo 'Codegen check failed. Apply this fix:'
+            echo
+            echo '```diff'
+            head -c 60000 codegen-docs.patch
+            echo '```'
+            echo
+            echo 'Or run locally: `make codegen-all-docs && make verify-codegen`'
+            if [ "$(wc -c < codegen-docs.patch)" -gt 60000 ]; then
+              echo
+              echo '_Patch truncated -- download the `codegen-docs-patch` artifact from this run for the full diff._'
+            fi
+          } > pr-comment-body.md
+          gh pr comment "$PR_NUMBER" --body-file pr-comment-body.md
 
   sync-issue:
     if: always() && github.event_name == 'push'

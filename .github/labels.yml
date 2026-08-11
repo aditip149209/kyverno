@@ -74,9 +74,7 @@ area/image-verify:
         - any-glob-to-any-file:
             - pkg/engine/image_verify.go
             - pkg/engine/image_verify_test.go
-            - pkg/imageverification/**
-            - pkg/imageverifycache/**
-            - pkg/images/**
+            - pkg/image/verification/**
 
 area/cosign:
   color: 3F51B5
@@ -84,7 +82,7 @@ area/cosign:
   rules:
     - changed-files:
         - any-glob-to-any-file:
-            - pkg/cosign/**
+            - pkg/image/verifiers/**/cosign/**
 
 area/notary:
   color: 3F51B5
@@ -92,7 +90,7 @@ area/notary:
   rules:
     - changed-files:
         - any-glob-to-any-file:
-            - pkg/notary/**
+            - pkg/image/verifiers/**/notary/**
 
 # ── Area: CEL (cyan #00BCD4) ─────────────────────────────────────────────────
 # ── CEL ─────────────────────────────────────────────────────────────────────
@@ -291,13 +289,15 @@ area/config:
             - cmd/internal/configmap.go
 
 # ── Registry Client ────────────────────────────────────────────────────────
+# NOTE: the local pkg/registryclient package was extracted to the external
+# github.com/kyverno/sdk module in #16439; cmd/internal/registry.go (the
+# wiring left behind in this repo) is the only local anchor left.
 area/registry:
   color: 546E7A
   description: Registry client
   rules:
     - changed-files:
         - any-glob-to-any-file:
-            - pkg/registryclient/**
             - cmd/internal/registry.go
 
 # ── Area: Infrastructure (blue-grey #607D8B) ────────────────────────────────
@@ -310,6 +310,7 @@ area/clients:
         - any-glob-to-any-file:
             - pkg/client/**
             - pkg/clients/**
+            - pkg/informers/**
 
 # ── PSS (Pod Security Standards) ───────────────────────────────────────────
 area/pss:
@@ -328,6 +329,15 @@ area/ext:
     - changed-files:
         - any-glob-to-any-file:
             - ext/**
+
+# ── Utils (shared internal helpers) ─────────────────────────────────────────
+area/utils:
+  color: 607D8B
+  description: Shared internal utility packages
+  rules:
+    - changed-files:
+        - any-glob-to-any-file:
+            - pkg/utils/**
 
 # ── Toggle / Feature Flags ─────────────────────────────────────────────────
 area/toggle:
@@ -463,7 +473,6 @@ kind/documentation:
             - README.md
             - ROADMAP.md
             - SECURITY.md
-            - Kyverno_Architecture_Roadmap.md
 
 # ── Kind: CI & Build (dark magenta #8E24AA) ─────────────────────────────────
 kind/ci:
@@ -485,7 +494,6 @@ kind/codegen:
         - any-glob-to-any-file:
             - hack/**
             - scripts/**
-            - cmd/tools/**
 
 # ── Kind: Dependencies (brown #795548) ──────────────────────────────────────
 kind/dependencies:
@@ -524,3 +532,7 @@ spam:
 merge-conflicts:
   color: E65100
   description: PR has merge conflicts
+
+dependabot-automerge-eligible:
+  color: 0e8a16
+  description: Passed the deterministic Dependabot auto-merge policy check (applied by dependabot-automerge-policy.yaml, not path-based)

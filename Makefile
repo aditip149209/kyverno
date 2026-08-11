@@ -860,6 +860,10 @@ verify-codegen: ## Verify all generated code and docs are up to date
 	@echo 'To correct this, locally run "make codegen-all", commit the changes, and re-run tests.' >&2
 	@git diff --exit-code
 
+.PHONY: verify-labels
+verify-labels: ## Verify every .github/labels.yml path rule still matches a real file
+	@python3 scripts/verify-labeler-paths.py
+
 ##############
 # UNIT TESTS #
 ##############

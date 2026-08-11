@@ -1,0 +1,87 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Dependabot auto-merge policy
+
+# Evaluates a deterministic policy for Dependabot PRs and records the
+# decision as a label + comment. It does NOT merge anything -- see the
+# note on the final step for why.
+
+on:
+  pull_request_target:
+    branches: [main]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  policy-check:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout policy scripts (from base branch, not the PR head)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          sparse-checkout: scripts
+
+      - name: Get Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a # v2.5.0
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Check minimum release age
+        id: age-check
+        continue-on-error: true # a failing gate is a policy signal, not a workflow bug
+        env:
+          ECOSYSTEM: ${{ steps.metadata.outputs.package-ecosystem }}
+          DEP_NAME: ${{ steps.metadata.outputs.dependency-names }}
+          NEW_VERSION: ${{ steps.metadata.outputs.new-version }}
+          MIN_AGE_DAYS: "3"
+        run: python3 scripts/dependabot-age-gate.py
+
+      - name: Evaluate policy
+        id: policy
+        env:
+          UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+          AGE_CHECK_OUTCOME: ${{ steps.age-check.outcome }}
+        run: |
+          if [[ "$UPDATE_TYPE" != "version-update:semver-patch" && "$UPDATE_TYPE" != "version-update:semver-minor" ]]; then
+            {
+              echo "decision=blocked"
+              echo "reason=update type '$UPDATE_TYPE' is not patch or minor"
+            } >> "$GITHUB_OUTPUT"
+          elif [[ "$AGE_CHECK_OUTCOME" != "success" ]]; then
+            {
+              echo "decision=blocked"
+              echo "reason=release age gate did not pass (see 'Check minimum release age' step)"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "decision=eligible"
+              echo "reason=patch/minor update and release age gate passed"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Record policy decision on the PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          DECISION: ${{ steps.policy.outputs.decision }}
+          REASON: ${{ steps.policy.outputs.reason }}
+        run: |
+          if [ "$DECISION" = "eligible" ]; then
+            gh pr edit "$PR_URL" --add-label "dependabot-automerge-eligible"
+          fi
+          gh pr comment "$PR_URL" --body "Auto-merge policy: **${DECISION}** (${REASON})."
+
+      # Intentionally NOT implemented: actually calling \`gh pr merge --auto\`
+      # (or the equivalent enablePullRequestAutoMerge mutation) requires a
+      # token with `contents: write`, which this workflow deliberately does
+      # not request. That's a hard constraint for this PoC (see the project
+      # proposal: no contents: write on protected branches from any
+      # workflow added here). Wiring the actual merge trigger on top of the
+      # `dependabot-automerge-eligible` label is a deliberate scope decision
+      # left to whoever owns the target repo's branch protection -- not
+      # something a policy-evaluation workflow should silently escalate to.
