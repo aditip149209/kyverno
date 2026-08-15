@@ -28,6 +28,11 @@ podSecuritySeverityByPolicy: {}
 # -- Policies to include when `podSecurityStandard` is `custom`.
 podSecurityPolicies: []
 
+# -- Relax the runAsNonRoot, runAsUser and procMount Pod Security Standard checks
+# for pods with spec.hostUsers set to false (Kubernetes user namespaces). Default
+# is `false` so existing behavior is unchanged unless explicitly opted into.
+podSecurityUserNamespaces: false
+
 # -- Additional policies to include from `other`.
 includeOtherPolicies: []
 # - require-non-root-groups

@@ -217,6 +217,7 @@ spec:
               "policyExceptions"
               "protectManagedResources"
               "registryClient"
+              "relaxUserNamespacePSSChecks"
               "reporting"
               "tuf"
             ) | nindent 12 }}

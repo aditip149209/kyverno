@@ -79,6 +79,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | podSecuritySeverity | string | `"medium"` | Pod Security Standard severity (`low`, `medium`, `high`). |
 | podSecuritySeverityByPolicy | object | `{}` | Define podSecuritySeverity overrides for specific policies. Override the global `podSecuritySeverity` with an individual severity for individual policies. An empty string per-policy entry suppresses the annotation entirely. |
 | podSecurityPolicies | list | `[]` | Policies to include when `podSecurityStandard` is `custom`. |
+| podSecurityUserNamespaces | bool | `false` | Relax the runAsNonRoot, runAsUser and procMount Pod Security Standard checks for pods with spec.hostUsers set to false (Kubernetes user namespaces). Default is `false` so existing behavior is unchanged unless explicitly opted into. |
 | includeOtherPolicies | list | `[]` | Additional policies to include from `other`. |
 | includeRestrictedPolicies | list | `[]` | Additional policies to include from `restricted`. |
 | customPolicies | list | `[]` | Additional custom policies to include. |

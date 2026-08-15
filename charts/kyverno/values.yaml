@@ -921,6 +921,11 @@ features:
   protectManagedResources:
     # -- Enables the feature
     enabled: false
+  relaxUserNamespacePSSChecks:
+    # -- Relax the runAsNonRoot, runAsUser and procMount Pod Security Standard checks
+    # for pods with spec.hostUsers set to false. Only enable this if every node in the
+    # cluster supports Kubernetes user namespaces.
+    enabled: false
   registryClient:
     # -- Allow insecure registry
     allowInsecure: false
