@@ -38,6 +38,7 @@ import (
 	"github.com/kyverno/kyverno/pkg/logging"
 	"github.com/kyverno/kyverno/pkg/metrics"
 	"github.com/kyverno/kyverno/pkg/policy"
+	"github.com/kyverno/kyverno/pkg/pss"
 	"github.com/kyverno/kyverno/pkg/toggle"
 	"github.com/kyverno/kyverno/pkg/utils/generator"
 	kubeutils "github.com/kyverno/kyverno/pkg/utils/kube"
@@ -176,6 +177,7 @@ func main() {
 	)
 	// parse flags
 	internal.ParseFlags(appConfig)
+	pss.SetRelaxUserNamespacePSSChecks(internal.RelaxUserNamespacePSSChecksEnabled())
 	apicall.SetScopedTokenClientTimeout(apiCallTimeout)
 	// Validate HTTP blocklist/allowlist flags at startup (fail-fast).
 	if err := celcompiler.ValidateHTTPFlags(); err != nil {

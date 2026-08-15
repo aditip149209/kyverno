@@ -47,6 +47,7 @@ import (
 	"github.com/kyverno/kyverno/pkg/logging"
 	"github.com/kyverno/kyverno/pkg/metrics"
 	"github.com/kyverno/kyverno/pkg/policycache"
+	"github.com/kyverno/kyverno/pkg/pss"
 	"github.com/kyverno/kyverno/pkg/tls"
 	"github.com/kyverno/kyverno/pkg/toggle"
 	"github.com/kyverno/kyverno/pkg/utils/generator"
@@ -451,6 +452,7 @@ func main() {
 
 	// parse flags
 	internal.ParseFlags(appConfig)
+	pss.SetRelaxUserNamespacePSSChecks(internal.RelaxUserNamespacePSSChecksEnabled())
 	apicall.SetScopedTokenClientTimeout(apiCallTimeout)
 	// Validate HTTP blocklist/allowlist flags at startup (fail-fast).
 	if err := celcompiler.ValidateHTTPFlags(); err != nil {

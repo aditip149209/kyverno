@@ -21,6 +21,15 @@ var (
 	regexStr   = regexp.MustCompile(`[a-zA-Z]+`)
 )
 
+// SetRelaxUserNamespacePSSChecks toggles the underlying pod-security-admission
+// library's relaxation of the runAsNonRoot, runAsUser and procMount checks for
+// pods with spec.hostUsers set to false (see KEP-127). This should only be
+// enabled when the cluster administrator has confirmed that every node in the
+// cluster supports Kubernetes user namespaces.
+func SetRelaxUserNamespacePSSChecks(enabled bool) {
+	policy.RelaxPolicyForUserNamespacePods(enabled)
+}
+
 // Evaluate Pod's specified containers only and get PSSCheckResults
 func evaluatePSS(level *api.LevelVersion, pod corev1.Pod) (results []pssutils.PSSCheckResult) {
 	checks := policy.DefaultChecks()

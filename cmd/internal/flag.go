@@ -45,10 +45,11 @@ var (
 	eventsRateLimitQPS   float64
 	eventsRateLimitBurst int
 	// engine
-	enablePolicyException  bool
-	exceptionNamespace     string
-	enableConfigMapCaching bool
-	openreportsEnabled     bool
+	enablePolicyException       bool
+	exceptionNamespace          string
+	enableConfigMapCaching      bool
+	openreportsEnabled          bool
+	relaxUserNamespacePSSChecks bool
 	// cosign
 	enableTUF           bool
 	enableCosignLogging bool
@@ -138,6 +139,12 @@ func initKubeconfigFlags(qps float64, burst int, eventsQPS float64, eventsBurst 
 func initPolicyExceptionsFlags() {
 	flag.StringVar(&exceptionNamespace, "exceptionNamespace", "", "Configure the namespace to accept PolicyExceptions. If it is set to '*', exceptions are allowed in all namespaces.")
 	flag.BoolVar(&enablePolicyException, "enablePolicyException", false, "Enable PolicyException feature.")
+}
+
+func initRelaxUserNamespacePSSChecksFlags() {
+	flag.BoolVar(&relaxUserNamespacePSSChecks, "relaxUserNamespacePSSChecks", false,
+		"Relax the runAsNonRoot, runAsUser and procMount Pod Security Standard checks for pods with spec.hostUsers: false. "+
+			"Only enable this if every node in the cluster supports Kubernetes user namespaces.")
 }
 
 func initConfigMapCachingFlags() {
@@ -288,6 +295,7 @@ func initFlags(config Configuration, opts ...Option) {
 		config.AddFlagSet(initOpenreportsFlagSet())
 	}
 
+	initRelaxUserNamespacePSSChecksFlags()
 	initCleanupFlags()
 	for _, flagset := range config.FlagSets() {
 		flagset.VisitAll(func(f *flag.Flag) {
@@ -311,6 +319,10 @@ func ExceptionNamespace() string {
 
 func PolicyExceptionEnabled() bool {
 	return enablePolicyException
+}
+
+func RelaxUserNamespacePSSChecksEnabled() bool {
+	return relaxUserNamespacePSSChecks
 }
 
 func LeaderElectionRetryPeriod() time.Duration {
